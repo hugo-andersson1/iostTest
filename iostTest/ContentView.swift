@@ -101,10 +101,11 @@ struct ContentView: View {
     
     @Environment(DeadlineStore.self) private var store
     @State var addingDeadline : Bool = false
+    @State private var selectedTab = 1
     var weekday = Date().formatted(.dateTime.weekday(.wide))
     var monthDate = Date().formatted(.dateTime.month().day())
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             NavigationStack {
                 VStack (spacing: 20){
                     ZStack{
@@ -206,10 +207,16 @@ struct ContentView: View {
                 }.padding()
             }.tabItem{
                 Label("Completed", systemImage: "checkmark.circle")
-            }
+            }.tag(2)
             ProfileView().tabItem {
                 Label("Profile", systemImage: "person")
             }.tag(3)
+        }
+        .onOpenURL { url in
+            guard url.scheme == "deadlines" else { return }
+            selectedTab = 1
+            store.currentCategory = store.categories.first(where: { $0.name == "All" }) ?? store.currentCategory
+            if url.host == "add" { addingDeadline = true }
         }
     }
 }

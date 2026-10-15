@@ -7,15 +7,19 @@
 import SwiftUI
 import Observation
 import Foundation
+import WidgetKit
 
 #Preview {
     ContentView()
         .environment(DeadlineStore())
 }
 
+@MainActor
 @Observable
 class DeadlineStore {
     
+    private var integrationsEnabled = false
+
     var personal = Category.personal
     
     var categories : [Category] = [] {
@@ -26,6 +30,7 @@ class DeadlineStore {
     var deadlines : [Deadline] = [] {
         didSet{
             saveDeadlines()
+            if integrationsEnabled { refreshIntegrations() }
         }
     }
     
@@ -206,6 +211,23 @@ class DeadlineStore {
             $0.dueDate < $1.dueDate
         }
     }
+    // Keep the app's existing files and models; export only what widgets need.
+    func refreshIntegrations() {
+        guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else { return }
+        integrationsEnabled = true
+        let snapshot = deadlines.filter { !$0.completed }.map {
+            WidgetDeadline(id: $0.id, name: $0.name, dueDate: $0.dueDate,
+                           icon: $0.category.icon, theme: $0.category.theme.rawValue)
+        }
+        do {
+            try WidgetDeadlineStorage.save(snapshot)
+            WidgetCenter.shared.reloadTimelines(ofKind: WidgetDeadlineStorage.widgetKind)
+        } catch {
+            print("Could not share deadlines with widgets: \(error.localizedDescription)")
+        }
+        DeadlineNotifications.shared.update(snapshot, requestPermission: true)
+    }
+
     // File location URL
     private var deadlineFileURL: URL {
         FileManager.default

@@ -8,6 +8,7 @@ import SwiftUI
 
 struct ProfileView : View {
     @Environment(DeadlineStore.self) static var store
+    @Environment(\.openURL) private var openURL
     @State var viewCategories : Bool = false
     var body : some View{
         NavigationStack{
@@ -30,6 +31,16 @@ struct ProfileView : View {
                     viewCategories = true
                 }){
                     Text("Manage Categories")
+                }
+                Text(DeadlineNotifications.shared.status)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.top)
+                Button("Notification Settings") {
+                    if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+                        openURL(url)
+                    }
                 }
                 Spacer()
                 

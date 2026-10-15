@@ -9,9 +9,13 @@ import SwiftUI
 
 @main
 struct iostTestApp: App {
+    
+    var store : DeadlineStore = DeadlineStore()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(store)
         }
     }
 }
